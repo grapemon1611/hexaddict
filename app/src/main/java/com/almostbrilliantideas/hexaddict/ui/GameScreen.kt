@@ -1,5 +1,11 @@
 package com.almostbrilliantideas.hexaddict.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,9 +35,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.delay
 import com.almostbrilliantideas.hexaddict.game.HexUtils
 import com.almostbrilliantideas.hexaddict.model.HexPiece
 import com.almostbrilliantideas.hexaddict.ui.components.DraggedPiece
@@ -54,6 +64,41 @@ fun GameScreen(
     // Board position and size for coordinate conversion
     var boardPositionInRoot by remember { mutableStateOf(Offset.Zero) }
     var boardSize by remember { mutableStateOf(IntSize.Zero) }
+
+    // Bonus text overlay state
+    var showBonusText by remember { mutableStateOf(false) }
+    var bonusText by remember { mutableStateOf("") }
+    var bonusColor by remember { mutableStateOf(Color.White) }
+
+    // Trigger bonus text when clearInfo changes
+    LaunchedEffect(gameState.lastClearInfo) {
+        val clearInfo = gameState.lastClearInfo
+        if (clearInfo != null) {
+            when {
+                clearInfo.isJackpot -> {
+                    bonusText = "JACKPOT!"
+                    bonusColor = Color(0xFFFFD700)  // Gold
+                    showBonusText = true
+                    delay(1500)
+                    showBonusText = false
+                }
+                clearInfo.isPayday -> {
+                    bonusText = "PAYDAY!"
+                    bonusColor = Color(0xFF4DB893)  // Teal
+                    showBonusText = true
+                    delay(1200)
+                    showBonusText = false
+                }
+                clearInfo.sameColorLineCount == 1 -> {
+                    bonusText = "2X"
+                    bonusColor = Color(0xFF8B84D4)  // Purple
+                    showBonusText = true
+                    delay(800)
+                    showBonusText = false
+                }
+            }
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -154,6 +199,13 @@ fun GameScreen(
                 onRestart = { viewModel.restartGame() }
             )
         }
+
+        // Bonus text overlay (PAYDAY / JACKPOT)
+        BonusTextOverlay(
+            visible = showBonusText,
+            text = bonusText,
+            color = bonusColor
+        )
     }
 }
 
@@ -273,6 +325,38 @@ private fun GameOverOverlay(
                     Text("Play Again")
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun BonusTextOverlay(
+    visible: Boolean,
+    text: String,
+    color: Color
+) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = scaleIn(
+            initialScale = 0.5f,
+            animationSpec = tween(200)
+        ) + fadeIn(animationSpec = tween(200)),
+        exit = scaleOut(
+            targetScale = 1.2f,
+            animationSpec = tween(300)
+        ) + fadeOut(animationSpec = tween(300))
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = text,
+                fontSize = 64.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = color,
+                textAlign = TextAlign.Center
+            )
         }
     }
 }

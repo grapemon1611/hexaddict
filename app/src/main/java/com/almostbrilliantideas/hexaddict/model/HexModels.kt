@@ -84,10 +84,12 @@ data class GameState(
 data class ClearInfo(
     val linesCleared: Int,
     val cellsCleared: Int,
-    val hadSameColorLine: Boolean,
-    val multipleSameColorLines: Boolean,
+    val sameColorLineCount: Int,
     val scoreGained: Int,
-    val multiplier: Int
+    val multiplier: Int,
+    val isPayday: Boolean = false,    // 2+ same-color lines (3x multiplier)
+    val isJackpot: Boolean = false,   // All 3 axes clear with same-color line
+    val jackpotBonusCells: Int = 0    // Extra cells cleared by jackpot
 )
 
 /**

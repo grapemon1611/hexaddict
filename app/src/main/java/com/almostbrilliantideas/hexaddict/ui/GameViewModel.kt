@@ -35,6 +35,7 @@ class GameViewModel : ViewModel() {
     companion object {
         private const val POINTS_PER_CELL_PLACED = 1
         private const val POINTS_PER_CELL_CLEARED = 10
+        private const val POINTS_PER_JACKPOT_CELL = 5
         private const val CLEAR_ANIMATION_DURATION_MS = 300L
     }
 
@@ -212,29 +213,57 @@ class GameViewModel : ViewModel() {
             colors.size == 1  // All cells same color
         }
 
-        val hasSameColorLine = sameColorLines.isNotEmpty()
-        val hasMultipleSameColorLines = sameColorLines.size >= 2
+        val sameColorLineCount = sameColorLines.size
 
-        // Calculate multiplier
+        // Check for JACKPOT: all 3 axes cleared with at least 1 same-color line
+        val axesCleared = completedLines.map { it.axis }.toSet()
+        val isJackpot = axesCleared.size == 3 && sameColorLineCount >= 1
+
+        // Calculate multiplier (applies to clear score only, not placement)
         val multiplier = when {
-            hasMultipleSameColorLines -> 3
-            hasSameColorLine -> 2
+            sameColorLineCount >= 2 -> 3  // PAYDAY
+            sameColorLineCount == 1 -> 2
             else -> 1
         }
 
-        // Calculate clear score
+        val isPayday = sameColorLineCount >= 2 && !isJackpot
+
+        // Calculate scores
         val clearScore = cellsToClear.size * POINTS_PER_CELL_CLEARED
-        val totalMoveScore = (placementScore + clearScore) * multiplier
+        val multipliedClearScore = clearScore * multiplier
+
+        // For JACKPOT: clear entire board, 5 pts per remaining cell
+        val jackpotBonusCells: Int
+        val jackpotBonus: Int
+        val finalCellsToClear: Set<AxialCoord>
+
+        if (isJackpot) {
+            // Find all remaining occupied cells (not already in cellsToClear)
+            val remainingOccupied = board.filter { (coord, cell) ->
+                cell.isOccupied && coord !in cellsToClear
+            }.keys
+            jackpotBonusCells = remainingOccupied.size
+            jackpotBonus = jackpotBonusCells * POINTS_PER_JACKPOT_CELL
+            finalCellsToClear = cellsToClear + remainingOccupied
+        } else {
+            jackpotBonusCells = 0
+            jackpotBonus = 0
+            finalCellsToClear = cellsToClear
+        }
+
+        val totalMoveScore = placementScore + multipliedClearScore + jackpotBonus
         val newScore = currentScore + totalMoveScore
 
         // Create clear info for display
         val clearInfo = ClearInfo(
             linesCleared = completedLines.size,
             cellsCleared = cellsToClear.size,
-            hadSameColorLine = hasSameColorLine,
-            multipleSameColorLines = hasMultipleSameColorLines,
+            sameColorLineCount = sameColorLineCount,
             scoreGained = totalMoveScore,
-            multiplier = multiplier
+            multiplier = multiplier,
+            isPayday = isPayday,
+            isJackpot = isJackpot,
+            jackpotBonusCells = jackpotBonusCells
         )
 
         // Start clearing animation
@@ -242,7 +271,7 @@ class GameViewModel : ViewModel() {
             state.copy(
                 board = board.toMap(),
                 piecesTray = tray,
-                clearingCells = cellsToClear,
+                clearingCells = finalCellsToClear,
                 lastClearInfo = clearInfo,
                 score = newScore,
                 bestScore = maxOf(currentBest, newScore)
@@ -252,7 +281,7 @@ class GameViewModel : ViewModel() {
         // After animation, remove cleared cells
         viewModelScope.launch {
             delay(CLEAR_ANIMATION_DURATION_MS)
-            completeClear(cellsToClear, newScore, tray)
+            completeClear(finalCellsToClear, newScore, tray)
         }
     }
 
