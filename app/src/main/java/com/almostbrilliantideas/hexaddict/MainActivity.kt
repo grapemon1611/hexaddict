@@ -1,0 +1,30 @@
+package com.almostbrilliantideas.hexaddict
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import com.almostbrilliantideas.hexaddict.ui.GameScreen
+import com.almostbrilliantideas.hexaddict.ui.theme.HexAddictTheme
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+
+        setContent {
+            HexAddictTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = Color(0xFF1A1A2E)
+                ) {
+                    GameScreen()
+                }
+            }
+        }
+    }
+}
