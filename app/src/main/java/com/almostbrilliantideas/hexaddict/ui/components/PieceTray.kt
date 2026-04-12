@@ -89,7 +89,8 @@ private fun PieceSlot(
                 slotPositionInRoot = coordinates.positionInRoot()
             }
             .background(
-                color = if (piece != null) Color(0xFF2D2D4A) else Color(0xFF1A1A2E),
+                color = if (piece != null) Color(0xFF2D2D4A).copy(alpha = 0.85f)
+                        else Color(0xFF1A1A2E).copy(alpha = 0.7f),
                 shape = RoundedCornerShape(12.dp)
             )
             .graphicsLayer {

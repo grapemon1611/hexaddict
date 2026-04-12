@@ -19,6 +19,24 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/**
+ * Data class for ambient line highlighting.
+ * Cells that are part of same-color partial lines get a subtle glow.
+ */
+data class LineHighlight(
+    val color: Color,
+    val intensity: Float  // 0.0 to 1.0, scales with match count
+)
+
+/**
+ * Data class for score preview during drag.
+ */
+data class ScorePreview(
+    val points: Int,
+    val multiplier: Int,  // 1, 2, or 3
+    val isPayday: Boolean
+)
+
 class GameViewModel : ViewModel() {
 
     private val _gameState = MutableStateFlow(createInitialState())
@@ -30,6 +48,12 @@ class GameViewModel : ViewModel() {
     private val _isValidPlacement = MutableStateFlow(true)
     val isValidPlacement: StateFlow<Boolean> = _isValidPlacement.asStateFlow()
 
+    private val _lineHighlights = MutableStateFlow<Map<AxialCoord, LineHighlight>>(emptyMap())
+    val lineHighlights: StateFlow<Map<AxialCoord, LineHighlight>> = _lineHighlights.asStateFlow()
+
+    private val _scorePreview = MutableStateFlow<ScorePreview?>(null)
+    val scorePreview: StateFlow<ScorePreview?> = _scorePreview.asStateFlow()
+
     private val boardCoords = HexUtils.getAllBoardCoords()
 
     companion object {
@@ -37,6 +61,102 @@ class GameViewModel : ViewModel() {
         private const val POINTS_PER_CELL_CLEARED = 10
         private const val POINTS_PER_JACKPOT_CELL = 5
         private const val CLEAR_ANIMATION_DURATION_MS = 300L
+    }
+
+    /**
+     * Calculate line highlights for cells that are part of same-color partial lines.
+     * Scans all lines and highlights cells where 2+ cells share the same color.
+     */
+    private fun calculateLineHighlights(board: Map<AxialCoord, HexCell>): Map<AxialCoord, LineHighlight> {
+        val highlights = mutableMapOf<AxialCoord, LineHighlight>()
+
+        for (line in LineDefinitions.allLines) {
+            // Group occupied cells by color
+            val occupiedByColor = line.cells
+                .mapNotNull { coord -> board[coord]?.color?.let { coord to it } }
+                .groupBy { it.second }
+
+            // Find dominant color with 2+ cells
+            val entry = occupiedByColor
+                .maxByOrNull { it.value.size }
+                ?.takeIf { it.value.size >= 2 }
+                ?: continue
+
+            val dominantColor = entry.key
+            val cells = entry.value
+
+            // Calculate intensity: (matchCount - 1) / (lineSize - 1)
+            // 2 matches = low intensity, all matches = max intensity
+            val intensity = (cells.size - 1).toFloat() / (line.size - 1).toFloat()
+
+            for ((coord, _) in cells) {
+                // Take stronger highlight if cell already has one
+                val existing = highlights[coord]
+                if (existing == null || existing.intensity < intensity) {
+                    highlights[coord] = LineHighlight(dominantColor, intensity)
+                }
+            }
+        }
+        return highlights
+    }
+
+    /**
+     * Calculate score preview for a potential piece placement.
+     */
+    private fun calculateScorePreview(
+        piece: HexPiece,
+        targetCoord: AxialCoord,
+        board: Map<AxialCoord, HexCell>
+    ): ScorePreview? {
+        val cellsToPlace = piece.cellsAt(targetCoord)
+
+        // Verify all cells are valid for placement
+        val isValid = cellsToPlace.all { coord ->
+            coord in boardCoords && board[coord]?.isEmpty == true
+        }
+        if (!isValid) return null
+
+        // Simulate placement
+        val simulatedBoard = board.toMutableMap()
+        for (coord in cellsToPlace) {
+            val cell = simulatedBoard[coord] ?: return null
+            simulatedBoard[coord] = cell.copy(color = piece.color)
+        }
+
+        // Check for completed lines
+        val completedLines = findCompletedLines(simulatedBoard, cellsToPlace)
+
+        if (completedLines.isEmpty()) {
+            // Just placement points, no lines
+            return ScorePreview(
+                points = cellsToPlace.size * POINTS_PER_CELL_PLACED,
+                multiplier = 1,
+                isPayday = false
+            )
+        }
+
+        // Count same-color lines
+        val sameColorLines = completedLines.count { line ->
+            val colors = line.cells.mapNotNull { simulatedBoard[it]?.color }.toSet()
+            colors.size == 1
+        }
+
+        val multiplier = when {
+            sameColorLines >= 2 -> 3
+            sameColorLines == 1 -> 2
+            else -> 1
+        }
+
+        val cellsToClear = completedLines.flatMap { it.cells }.toSet()
+        val clearScore = cellsToClear.size * POINTS_PER_CELL_CLEARED
+        val placementScore = cellsToPlace.size * POINTS_PER_CELL_PLACED
+        val totalPoints = placementScore + (clearScore * multiplier)
+
+        return ScorePreview(
+            points = totalPoints,
+            multiplier = multiplier,
+            isPayday = sameColorLines >= 2
+        )
     }
 
     private fun createInitialState(): GameState {
@@ -84,8 +204,16 @@ class GameViewModel : ViewModel() {
             _previewCells.value = cellsToPlace
                 .filter { it in boardCoords }
                 .associateWith { piece.color }
+
+            // Calculate score preview if valid
+            if (isValid) {
+                _scorePreview.value = calculateScorePreview(piece, targetCoord, currentBoard)
+            } else {
+                _scorePreview.value = null
+            }
         } else {
             _previewCells.value = emptyMap()
+            _scorePreview.value = null
         }
     }
 
@@ -95,6 +223,7 @@ class GameViewModel : ViewModel() {
     fun clearPreview() {
         _previewCells.value = emptyMap()
         _isValidPlacement.value = true
+        _scorePreview.value = null
     }
 
     /**
@@ -169,6 +298,9 @@ class GameViewModel : ViewModel() {
                     lastClearInfo = null
                 )
             }
+
+            // Update line highlights for ambient glow
+            _lineHighlights.value = calculateLineHighlights(newBoard)
         }
 
         clearPreview()
@@ -278,6 +410,9 @@ class GameViewModel : ViewModel() {
             )
         }
 
+        // Update line highlights (will show glow on remaining cells)
+        _lineHighlights.value = calculateLineHighlights(board)
+
         // After animation, remove cleared cells
         viewModelScope.launch {
             delay(CLEAR_ANIMATION_DURATION_MS)
@@ -293,25 +428,25 @@ class GameViewModel : ViewModel() {
         newScore: Int,
         tray: MutableList<HexPiece?>
     ) {
+        val clearedBoard = _gameState.value.board.toMutableMap()
+        for (coord in cellsToClear) {
+            val cell = clearedBoard[coord]
+            if (cell != null) {
+                clearedBoard[coord] = cell.copy(color = null)
+            }
+        }
+
+        // Check if tray is empty - refill it
+        val finalTray = if (tray.all { it == null }) {
+            generateNewPieces(newScore)
+        } else {
+            tray.toList()
+        }
+
+        // Check for game over
+        val isGameOver = checkGameOver(clearedBoard, finalTray)
+
         _gameState.update { state ->
-            val clearedBoard = state.board.toMutableMap()
-            for (coord in cellsToClear) {
-                val cell = clearedBoard[coord]
-                if (cell != null) {
-                    clearedBoard[coord] = cell.copy(color = null)
-                }
-            }
-
-            // Check if tray is empty - refill it
-            val finalTray = if (tray.all { it == null }) {
-                generateNewPieces(newScore)
-            } else {
-                tray.toList()
-            }
-
-            // Check for game over
-            val isGameOver = checkGameOver(clearedBoard, finalTray)
-
             state.copy(
                 board = clearedBoard,
                 piecesTray = finalTray,
@@ -319,6 +454,9 @@ class GameViewModel : ViewModel() {
                 isGameOver = isGameOver
             )
         }
+
+        // Update line highlights for ambient glow
+        _lineHighlights.value = calculateLineHighlights(clearedBoard)
     }
 
     /**
@@ -349,6 +487,7 @@ class GameViewModel : ViewModel() {
         val currentBest = _gameState.value.bestScore
         _gameState.value = createInitialState().copy(bestScore = currentBest)
         clearPreview()
+        _lineHighlights.value = emptyMap()
     }
 
     /**

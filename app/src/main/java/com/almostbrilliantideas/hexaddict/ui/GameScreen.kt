@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -43,7 +43,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
 import com.almostbrilliantideas.hexaddict.game.HexUtils
 import com.almostbrilliantideas.hexaddict.model.HexPiece
+import com.almostbrilliantideas.hexaddict.ui.components.BackgroundScene
 import com.almostbrilliantideas.hexaddict.ui.components.DraggedPiece
+import com.almostbrilliantideas.hexaddict.ui.components.GameLogo
 import com.almostbrilliantideas.hexaddict.ui.components.HexBoard
 import com.almostbrilliantideas.hexaddict.ui.components.PieceTray
 import kotlin.math.sqrt
@@ -55,6 +57,8 @@ fun GameScreen(
     val gameState by viewModel.gameState.collectAsState()
     val previewCells by viewModel.previewCells.collectAsState()
     val isValidPlacement by viewModel.isValidPlacement.collectAsState()
+    val lineHighlights by viewModel.lineHighlights.collectAsState()
+    val scorePreview by viewModel.scorePreview.collectAsState()
 
     // Drag state - positions are in absolute screen coordinates
     var draggedPiece by remember { mutableStateOf<HexPiece?>(null) }
@@ -101,24 +105,35 @@ fun GameScreen(
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF1A1A2E))
-            .statusBarsPadding()
+        modifier = Modifier.fillMaxSize()
     ) {
+        // Atmospheric background scene - renders behind everything
+        // Sky zone: top ~10% (above score bar)
+        // Ground zone: ~78-90% (between board and piece tray)
+        BackgroundScene(
+            modifier = Modifier.fillMaxSize(),
+            skyZoneEndFraction = 0.10f,
+            groundZoneStartFraction = 0.78f,
+            groundZoneEndFraction = 0.90f
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(horizontal = 16.dp)
+                .padding(top = 16.dp, bottom = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Logo above score bar
+            GameLogo()
+
             // Score display
             ScoreDisplay(
                 score = gameState.score,
                 bestScore = gameState.bestScore
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Hex board
             Box(
@@ -131,6 +146,7 @@ fun GameScreen(
             ) {
                 HexBoard(
                     cells = gameState.board,
+                    lineHighlights = lineHighlights,
                     previewCells = previewCells,
                     clearingCells = gameState.clearingCells,
                     invalidPreview = !isValidPlacement,
@@ -206,6 +222,12 @@ fun GameScreen(
             text = bonusText,
             color = bonusColor
         )
+
+        // Score preview during drag
+        ScorePreviewOverlay(
+            scorePreview = scorePreview,
+            visible = draggedPiece != null && isValidPlacement
+        )
     }
 }
 
@@ -243,7 +265,13 @@ private fun ScoreDisplay(
     bestScore: Int
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = Color(0xFF252540).copy(alpha = 0.85f),
+                shape = RoundedCornerShape(12.dp)
+            )
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column {
@@ -357,6 +385,48 @@ private fun BonusTextOverlay(
                 color = color,
                 textAlign = TextAlign.Center
             )
+        }
+    }
+}
+
+@Composable
+private fun ScorePreviewOverlay(
+    scorePreview: ScorePreview?,
+    visible: Boolean
+) {
+    AnimatedVisibility(
+        visible = visible && scorePreview != null,
+        enter = fadeIn(animationSpec = tween(100)),
+        exit = fadeOut(animationSpec = tween(100))
+    ) {
+        scorePreview?.let { preview ->
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 80.dp),
+                contentAlignment = Alignment.TopCenter
+            ) {
+                Surface(
+                    color = Color.Black.copy(alpha = 0.6f),
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text(
+                        text = when {
+                            preview.isPayday -> "PAYDAY ${preview.points} pts 3x"
+                            preview.multiplier == 2 -> "${preview.points} pts 2x"
+                            else -> "${preview.points} pts"
+                        },
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = when {
+                            preview.isPayday -> Color(0xFF4DB893)  // Teal
+                            preview.multiplier == 2 -> Color(0xFF8B84D4)  // Purple
+                            else -> Color.White
+                        }
+                    )
+                }
+            }
         }
     }
 }

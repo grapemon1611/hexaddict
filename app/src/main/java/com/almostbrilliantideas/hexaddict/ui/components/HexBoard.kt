@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import com.almostbrilliantideas.hexaddict.game.HexUtils
 import com.almostbrilliantideas.hexaddict.model.AxialCoord
 import com.almostbrilliantideas.hexaddict.model.HexCell
+import com.almostbrilliantideas.hexaddict.ui.LineHighlight
 import kotlin.math.sqrt
 
 /**
@@ -29,6 +30,7 @@ import kotlin.math.sqrt
 @Composable
 fun HexBoard(
     cells: Map<AxialCoord, HexCell>,
+    lineHighlights: Map<AxialCoord, LineHighlight> = emptyMap(),
     highlightedCells: Set<AxialCoord> = emptySet(),
     previewCells: Map<AxialCoord, Color> = emptyMap(),
     clearingCells: Set<AxialCoord> = emptySet(),
@@ -57,7 +59,7 @@ fun HexBoard(
             .fillMaxWidth()
             .aspectRatio(0.85f)  // Portrait ratio for hex board
             .background(
-                color = Color(0xFF252540),
+                color = Color(0xFF252540).copy(alpha = 0.85f),  // Frosted effect
                 shape = RoundedCornerShape(16.dp)
             )
             .padding(8.dp)
@@ -158,6 +160,23 @@ fun HexBoard(
                     cell.isOccupied -> {
                         // Occupied cell with piece color
                         val pieceColor = cell.color!!
+
+                        // Draw ambient glow if this cell is part of a same-color line
+                        val highlight = lineHighlights[coord]
+                        if (highlight != null) {
+                            // Outer glow - larger hexagon with low alpha
+                            val glowAlpha = 0.15f + (highlight.intensity * 0.20f)  // 0.15 to 0.35
+                            val glowSize = hexSize * (1.0f + highlight.intensity * 0.15f)  // Slight size increase
+                            drawHexagon(
+                                center = center,
+                                size = glowSize,
+                                fillColor = highlight.color.copy(alpha = glowAlpha),
+                                strokeColor = Color.Transparent,
+                                strokeWidth = 0f
+                            )
+                        }
+
+                        // Normal cell rendering
                         drawHexagon(
                             center = center,
                             size = hexSize * 0.95f,
