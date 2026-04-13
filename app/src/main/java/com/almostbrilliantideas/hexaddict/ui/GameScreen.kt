@@ -34,6 +34,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
@@ -41,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
+import com.almostbrilliantideas.hexaddict.audio.GameAudioController
 import com.almostbrilliantideas.hexaddict.game.HexUtils
 import com.almostbrilliantideas.hexaddict.model.HexPiece
 import com.almostbrilliantideas.hexaddict.ui.components.BackgroundScene
@@ -54,11 +56,21 @@ import kotlin.math.sqrt
 fun GameScreen(
     viewModel: GameViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     val gameState by viewModel.gameState.collectAsState()
     val previewCells by viewModel.previewCells.collectAsState()
     val isValidPlacement by viewModel.isValidPlacement.collectAsState()
     val lineHighlights by viewModel.lineHighlights.collectAsState()
     val scorePreview by viewModel.scorePreview.collectAsState()
+
+    // Audio controller for sound effects and haptics (nullable to handle init failures gracefully)
+    val audioController = remember {
+        try {
+            GameAudioController(context)
+        } catch (e: Exception) {
+            null
+        }
+    }
 
     // Drag state - positions are in absolute screen coordinates
     var draggedPiece by remember { mutableStateOf<HexPiece?>(null) }
@@ -74,10 +86,16 @@ fun GameScreen(
     var bonusText by remember { mutableStateOf("") }
     var bonusColor by remember { mutableStateOf(Color.White) }
 
-    // Trigger bonus text when clearInfo changes
+    // Track previous game over state to detect transitions
+    var wasGameOver by remember { mutableStateOf(false) }
+
+    // Trigger bonus text and audio when clearInfo changes
     LaunchedEffect(gameState.lastClearInfo) {
         val clearInfo = gameState.lastClearInfo
         if (clearInfo != null) {
+            // Play audio feedback for the clear
+            audioController?.onLineClear(clearInfo)
+
             when {
                 clearInfo.isJackpot -> {
                     bonusText = "JACKPOT!"
@@ -102,6 +120,14 @@ fun GameScreen(
                 }
             }
         }
+    }
+
+    // Trigger game over audio when game ends
+    LaunchedEffect(gameState.isGameOver) {
+        if (gameState.isGameOver && !wasGameOver) {
+            audioController?.onGameOver()
+        }
+        wasGameOver = gameState.isGameOver
     }
 
     Box(
@@ -188,7 +214,10 @@ fun GameScreen(
                             boardWidth = boardSize.width.toFloat(),
                             boardHeight = boardSize.height.toFloat()
                         )
-                        viewModel.placePiece(draggedPieceIndex, piece, targetCoord)
+                        val placed = viewModel.placePiece(draggedPieceIndex, piece, targetCoord)
+                        if (placed) {
+                            audioController?.onPiecePlaced()
+                        }
                     }
 
                     draggedPiece = null

@@ -1,8 +1,10 @@
 package com.almostbrilliantideas.hexaddict.ui
 
+import android.app.Application
 import androidx.compose.ui.graphics.Color
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.almostbrilliantideas.hexaddict.audio.SettingsManager
 import com.almostbrilliantideas.hexaddict.game.ColorPalette
 import com.almostbrilliantideas.hexaddict.game.HexUtils
 import com.almostbrilliantideas.hexaddict.game.LineDefinitions
@@ -37,7 +39,9 @@ data class ScorePreview(
     val isPayday: Boolean
 )
 
-class GameViewModel : ViewModel() {
+class GameViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val settingsManager = SettingsManager(application)
 
     private val _gameState = MutableStateFlow(createInitialState())
     val gameState: StateFlow<GameState> = _gameState.asStateFlow()
@@ -162,13 +166,26 @@ class GameViewModel : ViewModel() {
     private fun createInitialState(): GameState {
         val board = HexUtils.generateBoard()
         val pieces = generateNewPieces(0)
+        // Load persisted best score
+        val savedBestScore = settingsManager.bestScore
         return GameState(
             board = board,
             piecesTray = pieces,
             score = 0,
-            bestScore = 0,
+            bestScore = savedBestScore,
             isGameOver = false
         )
+    }
+
+    /**
+     * Update best score in both state and persistent storage.
+     */
+    private fun updateBestScore(newScore: Int, currentBest: Int): Int {
+        val newBest = maxOf(currentBest, newScore)
+        if (newBest > currentBest) {
+            settingsManager.bestScore = newBest
+        }
+        return newBest
     }
 
     /**
@@ -293,7 +310,7 @@ class GameViewModel : ViewModel() {
                     board = newBoard,
                     piecesTray = finalTray,
                     score = newScore,
-                    bestScore = maxOf(state.bestScore, newScore),
+                    bestScore = updateBestScore(newScore, state.bestScore),
                     isGameOver = isGameOver,
                     lastClearInfo = null
                 )
@@ -406,7 +423,7 @@ class GameViewModel : ViewModel() {
                 clearingCells = finalCellsToClear,
                 lastClearInfo = clearInfo,
                 score = newScore,
-                bestScore = maxOf(currentBest, newScore)
+                bestScore = updateBestScore(newScore, currentBest)
             )
         }
 
