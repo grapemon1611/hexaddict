@@ -1,8 +1,8 @@
-package com.almostbrilliantideas.hexaddict.game
+package com.almostbrilliantideas.hexspark.game
 
 import androidx.compose.ui.geometry.Offset
-import com.almostbrilliantideas.hexaddict.model.AxialCoord
-import com.almostbrilliantideas.hexaddict.model.HexCell
+import com.almostbrilliantideas.hexspark.model.AxialCoord
+import com.almostbrilliantideas.hexspark.model.HexCell
 import kotlin.math.floor
 import kotlin.math.sqrt
 

@@ -1,4 +1,4 @@
-package com.almostbrilliantideas.hexaddict.ui.components
+package com.almostbrilliantideas.hexspark.ui.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures

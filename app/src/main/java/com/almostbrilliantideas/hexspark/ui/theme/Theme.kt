@@ -1,4 +1,4 @@
-package com.almostbrilliantideas.hexaddict.ui.theme
+package com.almostbrilliantideas.hexspark.ui.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -26,7 +26,7 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 @Composable
-fun HexAddictTheme(
+fun HexSparkTheme(
     content: @Composable () -> Unit
 ) {
     MaterialTheme(

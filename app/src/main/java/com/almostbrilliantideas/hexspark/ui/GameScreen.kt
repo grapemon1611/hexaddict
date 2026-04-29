@@ -1,5 +1,6 @@
-package com.almostbrilliantideas.hexaddict.ui
+package com.almostbrilliantideas.hexspark.ui
 
+import android.app.Activity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -7,6 +8,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,8 +18,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -30,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -42,22 +49,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
-import com.almostbrilliantideas.hexaddict.audio.GameAudioController
-import com.almostbrilliantideas.hexaddict.game.HexUtils
-import com.almostbrilliantideas.hexaddict.model.HexPiece
-import com.almostbrilliantideas.hexaddict.ui.components.BackgroundScene
-import com.almostbrilliantideas.hexaddict.ui.components.DraggedPiece
-import com.almostbrilliantideas.hexaddict.ui.components.GameLogo
-import com.almostbrilliantideas.hexaddict.ui.components.HexBoard
-import com.almostbrilliantideas.hexaddict.ui.components.PieceTray
+import com.almostbrilliantideas.hexspark.ads.AdManager
+import com.almostbrilliantideas.hexspark.audio.GameAudioController
+import com.almostbrilliantideas.hexspark.game.HexUtils
+import com.almostbrilliantideas.hexspark.model.HexPiece
+import com.almostbrilliantideas.hexspark.ui.components.BackgroundScene
+import com.almostbrilliantideas.hexspark.ui.components.DraggedPiece
+import com.almostbrilliantideas.hexspark.ui.components.GameLogo
+import com.almostbrilliantideas.hexspark.ui.components.HexBoard
+import com.almostbrilliantideas.hexspark.ui.components.PieceTray
 import kotlin.math.sqrt
 
 @Composable
 fun GameScreen(
-    viewModel: GameViewModel = viewModel()
+    viewModel: GameViewModel = viewModel(),
+    adManager: AdManager? = null,
+    activity: Activity? = null
 ) {
     val context = LocalContext.current
     val gameState by viewModel.gameState.collectAsState()
+    val dimensions = rememberGameDimensions()
     val previewCells by viewModel.previewCells.collectAsState()
     val isValidPlacement by viewModel.isValidPlacement.collectAsState()
     val lineHighlights by viewModel.lineHighlights.collectAsState()
@@ -88,6 +99,17 @@ fun GameScreen(
 
     // Track previous game over state to detect transitions
     var wasGameOver by remember { mutableStateOf(false) }
+
+    // Track whether the game over overlay should be shown (after ad completes or immediately if no ad)
+    var showGameOverOverlay by remember { mutableStateOf(false) }
+
+    // Settings screen state
+    var showSettings by remember { mutableStateOf(false) }
+
+    // Tutorial state - show on first launch or if enabled in settings
+    var showTutorial by remember {
+        mutableStateOf(audioController?.settingsManager?.shouldShowTutorial() ?: false)
+    }
 
     // Trigger bonus text and audio when clearInfo changes
     LaunchedEffect(gameState.lastClearInfo) {
@@ -122,10 +144,23 @@ fun GameScreen(
         }
     }
 
-    // Trigger game over audio when game ends
+    // Trigger game over audio and ad when game ends
     LaunchedEffect(gameState.isGameOver) {
         if (gameState.isGameOver && !wasGameOver) {
             audioController?.onGameOver()
+
+            // Show ad if available, then show game over overlay
+            if (adManager != null && activity != null) {
+                adManager.showAdIfReady(activity) {
+                    showGameOverOverlay = true
+                }
+            } else {
+                // No ad manager, show game over immediately
+                showGameOverOverlay = true
+            }
+        } else if (!gameState.isGameOver && wasGameOver) {
+            // Game restarted, hide overlay
+            showGameOverOverlay = false
         }
         wasGameOver = gameState.isGameOver
     }
@@ -146,47 +181,53 @@ fun GameScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp)
-                .padding(top = 16.dp, bottom = 16.dp),
+                .padding(horizontal = dimensions.screenPaddingHorizontal)
+                .padding(top = dimensions.screenPaddingTop, bottom = dimensions.screenPaddingBottom),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Logo above score bar
-            GameLogo()
+            GameLogo(dimensions = dimensions)
 
             // Score display
             ScoreDisplay(
                 score = gameState.score,
-                bestScore = gameState.bestScore
+                bestScore = gameState.bestScore,
+                dimensions = dimensions
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(dimensions.spacerAfterScoreBar))
 
-            // Hex board
+            // Hex board - centered in available space
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .onGloballyPositioned { coordinates ->
-                        boardPositionInRoot = coordinates.positionInRoot()
-                        boardSize = coordinates.size
-                    }
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center
             ) {
                 HexBoard(
                     cells = gameState.board,
                     lineHighlights = lineHighlights,
                     previewCells = previewCells,
                     clearingCells = gameState.clearingCells,
+                    clearInfo = gameState.lastClearInfo,
                     invalidPreview = !isValidPlacement,
                     onCellTap = { coord ->
                         viewModel.onCellTap(coord)
+                    },
+                    dimensions = dimensions,
+                    modifier = Modifier.onGloballyPositioned { coordinates ->
+                        boardPositionInRoot = coordinates.positionInRoot()
+                        boardSize = coordinates.size
                     }
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimensions.spacerAfterBoard))
 
             // Piece tray
             PieceTray(
                 pieces = gameState.piecesTray,
+                dimensions = dimensions,
                 onPieceDragStart = { index, piece, absolutePosition ->
                     draggedPiece = piece
                     draggedPieceIndex = index
@@ -224,7 +265,7 @@ fun GameScreen(
                     draggedPieceIndex = -1
                     viewModel.clearPreview()
                 },
-                modifier = Modifier.height(120.dp)
+                modifier = Modifier.height(dimensions.pieceTrayHeight)
             )
         }
 
@@ -232,16 +273,22 @@ fun GameScreen(
         if (draggedPiece != null) {
             DraggedPiece(
                 piece = draggedPiece!!,
-                position = dragPosition
+                position = dragPosition,
+                dimensions = dimensions
             )
         }
 
-        // Game over overlay
-        if (gameState.isGameOver) {
+        // Game over overlay (shown after ad completes or immediately if no ad)
+        if (showGameOverOverlay && !showSettings) {
             GameOverOverlay(
                 score = gameState.score,
                 bestScore = gameState.bestScore,
-                onRestart = { viewModel.restartGame() }
+                dimensions = dimensions,
+                onRestart = {
+                    showGameOverOverlay = false
+                    viewModel.restartGame()
+                },
+                onSettings = { showSettings = true }
             )
         }
 
@@ -249,14 +296,62 @@ fun GameScreen(
         BonusTextOverlay(
             visible = showBonusText,
             text = bonusText,
-            color = bonusColor
+            color = bonusColor,
+            dimensions = dimensions
         )
 
         // Score preview during drag
         ScorePreviewOverlay(
             scorePreview = scorePreview,
-            visible = draggedPiece != null && isValidPlacement
+            visible = draggedPiece != null && isValidPlacement,
+            dimensions = dimensions
         )
+
+        // Settings screen overlay
+        if (showSettings) {
+            audioController?.settingsManager?.let { settingsManager ->
+                SettingsScreen(
+                    settingsManager = settingsManager,
+                    onClose = { showSettings = false }
+                )
+            }
+        }
+
+        // Gear icon for settings (top right, unobtrusive)
+        if (!gameState.isGameOver && !showGameOverOverlay && !showSettings && !showTutorial) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = dimensions.screenPaddingTop, end = dimensions.screenPaddingHorizontal),
+                contentAlignment = Alignment.TopEnd
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(dimensions.settingsIconSize)
+                        .clip(CircleShape)
+                        .background(Color(0xFF252540).copy(alpha = 0.7f))
+                        .clickable { showSettings = true },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "\u2699", // Gear symbol
+                        fontSize = dimensions.settingsIconFontSize,
+                        color = Color(0xFFB8B4C4)
+                    )
+                }
+            }
+        }
+
+        // Tutorial overlay (shows on first launch or if enabled in settings)
+        if (showTutorial) {
+            TutorialOverlay(
+                onDismiss = {
+                    showTutorial = false
+                    // Mark tutorial as seen so it won't show again unless enabled in settings
+                    audioController?.settingsManager?.tutorialSeen = true
+                }
+            )
+        }
     }
 }
 
@@ -268,7 +363,7 @@ private fun screenPositionToAxial(
     boardPosition: Offset,
     boardWidth: Float,
     boardHeight: Float
-): com.almostbrilliantideas.hexaddict.model.AxialCoord {
+): com.almostbrilliantideas.hexspark.model.AxialCoord {
     // Convert screen position to board-relative position
     val boardRelativePos = Offset(
         screenPos.x - boardPosition.x,
@@ -291,27 +386,31 @@ private fun screenPositionToAxial(
 @Composable
 private fun ScoreDisplay(
     score: Int,
-    bestScore: Int
+    bestScore: Int,
+    dimensions: GameDimensions
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(
                 color = Color(0xFF252540).copy(alpha = 0.85f),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(dimensions.scoreBarCornerRadius)
             )
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(
+                horizontal = dimensions.scoreBarPaddingHorizontal,
+                vertical = dimensions.scoreBarPaddingVertical
+            ),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column {
             Text(
                 text = "SCORE",
-                style = MaterialTheme.typography.labelMedium,
+                fontSize = dimensions.scoreLabelFontSize,
                 color = Color(0xFFB8B4C4)
             )
             Text(
                 text = score.toString(),
-                style = MaterialTheme.typography.headlineMedium,
+                fontSize = dimensions.scoreValueFontSize,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
@@ -319,12 +418,12 @@ private fun ScoreDisplay(
         Column(horizontalAlignment = Alignment.End) {
             Text(
                 text = "BEST",
-                style = MaterialTheme.typography.labelMedium,
+                fontSize = dimensions.scoreLabelFontSize,
                 color = Color(0xFFB8B4C4)
             )
             Text(
                 text = bestScore.toString(),
-                style = MaterialTheme.typography.headlineMedium,
+                fontSize = dimensions.scoreValueFontSize,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF8B84D4)
             )
@@ -336,7 +435,9 @@ private fun ScoreDisplay(
 private fun GameOverOverlay(
     score: Int,
     bestScore: Int,
-    onRestart: () -> Unit
+    dimensions: GameDimensions,
+    onRestart: () -> Unit,
+    onSettings: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -346,40 +447,69 @@ private fun GameOverOverlay(
     ) {
         Surface(
             color = Color(0xFF252540),
-            shape = MaterialTheme.shapes.large
+            shape = RoundedCornerShape(dimensions.boardCornerRadius)
         ) {
             Column(
-                modifier = Modifier.padding(32.dp),
+                modifier = Modifier.padding(dimensions.overlayPadding),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = "GAME OVER",
-                    style = MaterialTheme.typography.headlineLarge,
+                    fontSize = dimensions.overlayTitleFontSize,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(dimensions.spacerAfterBoard))
 
                 Text(
                     text = "Score: $score",
-                    style = MaterialTheme.typography.titleLarge,
+                    fontSize = dimensions.overlaySubtitleFontSize,
                     color = Color.White
                 )
 
                 if (score >= bestScore && score > 0) {
                     Text(
                         text = "NEW BEST!",
-                        style = MaterialTheme.typography.titleMedium,
+                        fontSize = (dimensions.overlaySubtitleFontSize.value * 0.8f).sp,
                         color = Color(0xFF8B84D4),
                         fontWeight = FontWeight.Bold
                     )
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(dimensions.spacerAfterBoard))
 
-                Button(onClick = onRestart) {
-                    Text("Play Again")
+                // Play Again button
+                Button(
+                    onClick = onRestart,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF8B84D4)
+                    )
+                ) {
+                    Text(
+                        text = "Play Again",
+                        fontSize = dimensions.buttonFontSize
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(dimensions.spacerAfterScoreBar))
+
+                // Settings button
+                Button(
+                    onClick = onSettings,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF3A3A50)
+                    )
+                ) {
+                    Text(
+                        text = "\u2699",
+                        fontSize = dimensions.buttonFontSize
+                    )
+                    Spacer(modifier = Modifier.width(dimensions.spacerAfterScoreBar))
+                    Text(
+                        text = "Settings",
+                        fontSize = dimensions.buttonFontSize
+                    )
                 }
             }
         }
@@ -390,7 +520,8 @@ private fun GameOverOverlay(
 private fun BonusTextOverlay(
     visible: Boolean,
     text: String,
-    color: Color
+    color: Color,
+    dimensions: GameDimensions
 ) {
     AnimatedVisibility(
         visible = visible,
@@ -409,7 +540,7 @@ private fun BonusTextOverlay(
         ) {
             Text(
                 text = text,
-                fontSize = 64.sp,
+                fontSize = dimensions.bonusTextFontSize,
                 fontWeight = FontWeight.ExtraBold,
                 color = color,
                 textAlign = TextAlign.Center
@@ -421,7 +552,8 @@ private fun BonusTextOverlay(
 @Composable
 private fun ScorePreviewOverlay(
     scorePreview: ScorePreview?,
-    visible: Boolean
+    visible: Boolean,
+    dimensions: GameDimensions
 ) {
     AnimatedVisibility(
         visible = visible && scorePreview != null,
@@ -432,12 +564,12 @@ private fun ScorePreviewOverlay(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 80.dp),
+                    .padding(top = dimensions.pieceTrayHeight * 0.67f),
                 contentAlignment = Alignment.TopCenter
             ) {
                 Surface(
                     color = Color.Black.copy(alpha = 0.6f),
-                    shape = MaterialTheme.shapes.small
+                    shape = RoundedCornerShape(dimensions.pieceSlotCornerRadius / 2)
                 ) {
                     Text(
                         text = when {
@@ -445,8 +577,11 @@ private fun ScorePreviewOverlay(
                             preview.multiplier == 2 -> "${preview.points} pts 2x"
                             else -> "${preview.points} pts"
                         },
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        fontSize = 16.sp,
+                        modifier = Modifier.padding(
+                            horizontal = dimensions.scorePreviewPadding * 2,
+                            vertical = dimensions.scorePreviewPadding
+                        ),
+                        fontSize = dimensions.scorePreviewFontSize,
                         fontWeight = FontWeight.Bold,
                         color = when {
                             preview.isPayday -> Color(0xFF4DB893)  // Teal

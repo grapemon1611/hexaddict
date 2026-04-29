@@ -1,4 +1,4 @@
-package com.almostbrilliantideas.hexaddict.game
+package com.almostbrilliantideas.hexspark.game
 
 import androidx.compose.ui.graphics.Color
 

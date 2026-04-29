@@ -1,6 +1,7 @@
-package com.almostbrilliantideas.hexaddict.model
+package com.almostbrilliantideas.hexspark.model
 
 import androidx.compose.ui.graphics.Color
+import com.almostbrilliantideas.hexspark.game.LineDefinitions
 
 /**
  * Axial coordinate for hexagonal grid.
@@ -89,7 +90,11 @@ data class ClearInfo(
     val multiplier: Int,
     val isPayday: Boolean = false,    // 2+ same-color lines (3x multiplier)
     val isJackpot: Boolean = false,   // All 3 axes clear with same-color line
-    val jackpotBonusCells: Int = 0    // Extra cells cleared by jackpot
+    val jackpotBonusCells: Int = 0,   // Extra cells cleared by jackpot
+    // Line data for spark effects (sequential ignition)
+    val completedLines: List<LineDefinitions.Line> = emptyList(),
+    val sameColorLines: Set<LineDefinitions.Line> = emptySet(),
+    val cellColors: Map<AxialCoord, Color> = emptyMap()
 )
 
 /**

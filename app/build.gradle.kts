@@ -5,15 +5,15 @@ plugins {
 }
 
 android {
-    namespace = "com.almostbrilliantideas.hexaddict"
+    namespace = "com.almostbrilliantideas.hexspark"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.almostbrilliantideas.hexaddict"
+        applicationId = "com.almostbrilliantideas.hexspark"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 3
+        versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -50,6 +50,12 @@ dependencies {
     implementation(libs.androidx.ui.text.google.fonts)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+
+    // Splash Screen API (backwards compatible)
+    implementation("androidx.core:core-splashscreen:1.0.1")
+
+    // AdMob
+    implementation("com.google.android.gms:play-services-ads:23.0.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

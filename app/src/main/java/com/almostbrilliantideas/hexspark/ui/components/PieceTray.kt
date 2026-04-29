@@ -1,4 +1,4 @@
-package com.almostbrilliantideas.hexaddict.ui.components
+package com.almostbrilliantideas.hexspark.ui.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -24,9 +24,11 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.almostbrilliantideas.hexaddict.game.HexUtils
-import com.almostbrilliantideas.hexaddict.model.HexPiece
+import com.almostbrilliantideas.hexspark.game.HexUtils
+import com.almostbrilliantideas.hexspark.model.HexPiece
+import com.almostbrilliantideas.hexspark.ui.GameDimensions
 
 /**
  * Tray displaying 3 available pieces for placement.
@@ -34,25 +36,37 @@ import com.almostbrilliantideas.hexaddict.model.HexPiece
  * @param onPieceDragStart Called with (index, piece, absolutePosition) when drag starts
  * @param onPieceDrag Called with absolute screen position during drag
  * @param onPieceDragEnd Called when drag ends
+ * @param dimensions Responsive layout dimensions for scaling
  */
 @Composable
 fun PieceTray(
     pieces: List<HexPiece?>,
+    dimensions: GameDimensions? = null,
     onPieceDragStart: (Int, HexPiece, Offset) -> Unit,
     onPieceDrag: (Offset) -> Unit,
     onPieceDragEnd: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val paddingHorizontal = dimensions?.pieceTrayPaddingHorizontal ?: 16.dp
+    val slotPadding = dimensions?.pieceSlotPadding ?: 8.dp
+    val slotCornerRadius = dimensions?.pieceSlotCornerRadius ?: 12.dp
+    val previewCanvasSize = dimensions?.piecePreviewCanvasSize ?: 80.dp
+    val previewHexSize = dimensions?.piecePreviewHexSize ?: 15f
+
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = paddingHorizontal),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
         pieces.forEachIndexed { index, piece ->
             PieceSlot(
                 piece = piece,
+                slotPadding = slotPadding,
+                slotCornerRadius = slotCornerRadius,
+                previewCanvasSize = previewCanvasSize,
+                previewHexSize = previewHexSize,
                 onDragStart = { p, absolutePos ->
                     if (p != null) {
                         onPieceDragStart(index, p, absolutePos)
@@ -72,6 +86,10 @@ fun PieceTray(
 @Composable
 private fun PieceSlot(
     piece: HexPiece?,
+    slotPadding: Dp,
+    slotCornerRadius: Dp,
+    previewCanvasSize: Dp,
+    previewHexSize: Float,
     onDragStart: (HexPiece?, Offset) -> Unit,
     onDrag: (Offset) -> Unit,
     onDragEnd: () -> Unit,
@@ -84,14 +102,14 @@ private fun PieceSlot(
     Box(
         modifier = modifier
             .aspectRatio(1f)
-            .padding(8.dp)
+            .padding(slotPadding)
             .onGloballyPositioned { coordinates ->
                 slotPositionInRoot = coordinates.positionInRoot()
             }
             .background(
                 color = if (piece != null) Color(0xFF2D2D4A).copy(alpha = 0.85f)
                         else Color(0xFF1A1A2E).copy(alpha = 0.7f),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(slotCornerRadius)
             )
             .graphicsLayer {
                 alpha = if (isDragging) 0.3f else 1f
@@ -132,7 +150,11 @@ private fun PieceSlot(
         contentAlignment = Alignment.Center
     ) {
         if (piece != null) {
-            PiecePreview(piece = piece)
+            PiecePreview(
+                piece = piece,
+                canvasSize = previewCanvasSize,
+                hexSize = previewHexSize
+            )
         }
     }
 }
@@ -144,10 +166,11 @@ private fun PieceSlot(
 fun PiecePreview(
     piece: HexPiece,
     modifier: Modifier = Modifier,
+    canvasSize: Dp = 80.dp,
     hexSize: Float = 15f
 ) {
     Canvas(
-        modifier = modifier.size(80.dp)
+        modifier = modifier.size(canvasSize)
     ) {
         val centerX = size.width / 2
         val centerY = size.height / 2
@@ -194,10 +217,11 @@ fun PiecePreview(
 fun DraggedPiece(
     piece: HexPiece,
     position: Offset,
+    dimensions: GameDimensions? = null,
     modifier: Modifier = Modifier
 ) {
-    val pieceSize = 120.dp
-    val hexSize = 20f
+    val pieceSize = dimensions?.draggedPieceCanvasSize ?: 120.dp
+    val hexSize = dimensions?.draggedPieceHexSize ?: 20f
 
     Canvas(
         modifier = modifier

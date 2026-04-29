@@ -4,9 +4,11 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,6 +29,7 @@ import com.almostbrilliantideas.hexspark.game.HexUtils
 import com.almostbrilliantideas.hexspark.model.AxialCoord
 import com.almostbrilliantideas.hexspark.model.ClearInfo
 import com.almostbrilliantideas.hexspark.model.HexCell
+import com.almostbrilliantideas.hexspark.ui.GameDimensions
 import com.almostbrilliantideas.hexspark.ui.LineHighlight
 import com.almostbrilliantideas.hexspark.ui.effects.ClearTier
 import com.almostbrilliantideas.hexspark.ui.effects.SparkEffectState
@@ -47,6 +50,7 @@ fun HexBoard(
     clearInfo: ClearInfo? = null,
     invalidPreview: Boolean = false,
     onCellTap: (AxialCoord) -> Unit = {},
+    dimensions: GameDimensions? = null,
     modifier: Modifier = Modifier
 ) {
     val boardCoords = remember { HexUtils.getAllBoardCoords() }
@@ -152,15 +156,29 @@ fun HexBoard(
         }
     }
 
+    // Use dimensions if provided, otherwise use defaults
+    val boardPadding = dimensions?.boardPadding ?: 8.dp
+    val boardCornerRadius = dimensions?.boardCornerRadius ?: 16.dp
+    val boardWidth = dimensions?.boardWidth
+    val boardHeight = dimensions?.boardHeight
+
+    // If dimensions are provided, use explicit sizing; otherwise fall back to fillMaxSize
+    val sizeModifier = if (boardWidth != null && boardHeight != null) {
+        Modifier
+            .width(boardWidth)
+            .height(boardHeight)
+    } else {
+        Modifier.fillMaxSize()
+    }
+
     Box(
         modifier = modifier
-            .fillMaxWidth()
-            .aspectRatio(0.85f)  // Portrait ratio for hex board
+            .then(sizeModifier)
             .background(
                 color = Color(0xFF252540).copy(alpha = 0.85f),  // Frosted effect
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(boardCornerRadius)
             )
-            .padding(8.dp)
+            .padding(boardPadding)
     ) {
         Canvas(
             modifier = Modifier

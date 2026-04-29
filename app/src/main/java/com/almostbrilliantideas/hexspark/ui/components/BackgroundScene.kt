@@ -1,4 +1,4 @@
-package com.almostbrilliantideas.hexaddict.ui.components
+package com.almostbrilliantideas.hexspark.ui.components
 
 import android.icu.util.TimeZone
 import androidx.compose.foundation.Canvas
@@ -25,7 +25,8 @@ import androidx.compose.ui.text.googlefonts.GoogleFont
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.almostbrilliantideas.hexaddict.R
+import com.almostbrilliantideas.hexspark.R
+import com.almostbrilliantideas.hexspark.ui.GameDimensions
 import java.util.Calendar
 import kotlin.math.PI
 import kotlin.math.sin
@@ -232,17 +233,20 @@ fun BackgroundScene(
  */
 @Composable
 fun GameLogo(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    dimensions: GameDimensions? = null
 ) {
     val timeOfDay = remember { getCurrentTimeOfDay() }
+    val fontSize = dimensions?.logoFontSize ?: 28.sp
+    val paddingVertical = dimensions?.logoPaddingVertical ?: 8.dp
 
     Text(
-        text = "Hex Addict",
+        text = "HexSpark",
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = paddingVertical),
         textAlign = TextAlign.Center,
-        fontSize = 28.sp,
+        fontSize = fontSize,
         fontWeight = FontWeight.SemiBold,
         color = getLogoColor(timeOfDay),
         fontFamily = oxaniumFontFamily

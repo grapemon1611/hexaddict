@@ -1,4 +1,4 @@
-package com.almostbrilliantideas.hexaddict
+package com.almostbrilliantideas.hexspark
 
 import org.junit.Test
 

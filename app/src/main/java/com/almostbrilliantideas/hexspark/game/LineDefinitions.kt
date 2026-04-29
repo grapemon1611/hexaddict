@@ -1,6 +1,6 @@
-package com.almostbrilliantideas.hexaddict.game
+package com.almostbrilliantideas.hexspark.game
 
-import com.almostbrilliantideas.hexaddict.model.AxialCoord
+import com.almostbrilliantideas.hexspark.model.AxialCoord
 
 /**
  * Precomputed line definitions for all three axes.

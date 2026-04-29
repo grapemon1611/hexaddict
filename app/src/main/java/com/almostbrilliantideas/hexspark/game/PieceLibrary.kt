@@ -1,7 +1,7 @@
-package com.almostbrilliantideas.hexaddict.game
+package com.almostbrilliantideas.hexspark.game
 
-import com.almostbrilliantideas.hexaddict.model.AxialCoord
-import com.almostbrilliantideas.hexaddict.model.HexPiece
+import com.almostbrilliantideas.hexspark.model.AxialCoord
+import com.almostbrilliantideas.hexspark.model.HexPiece
 import kotlin.random.Random
 
 /**

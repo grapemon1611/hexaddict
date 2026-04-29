@@ -1,14 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme for Compose with SplashScreen support -->
+    <!-- Base application theme for Compose with Android 12+ Splash Screen -->
     <style name="Theme.HexAddicT" parent="Theme.SplashScreen">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
 
-        <!-- SplashScreen attributes (for API 24-30) -->
+        <!-- SplashScreen library attributes -->
         <item name="windowSplashScreenBackground">@color/splash_background</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/hexspark_icon</item>
         <item name="postSplashScreenTheme">@style/Theme.HexAddicT.PostSplash</item>
+
+        <!-- Android 12+ Splash Screen API (native) -->
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/hexspark_icon</item>
+        <item name="android:windowSplashScreenAnimationDuration">300</item>
     </style>
 
     <!-- Post-splash theme (actual app theme) -->
