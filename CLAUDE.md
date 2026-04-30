@@ -106,8 +106,9 @@ Six neighbor directions:
 - Score 0–999: heavy small pieces (single 4.0x, pair 3.5x, line 1.5x, compact 1.0x)
 - Score 1000–2999: gentle transition, small pieces still dominant
 - Score 3000–4999: balanced mix
-- Score 5000+: late game pressure, compact shapes weighted higher
-- Guaranteed floor: no tray of three can be all compact shapes — always replace one with 1 or 2-cell piece
+- Score 5000+: aggressive pressure (single 1.0x, pair 1.0x, line 2.0x, compact 8.0x)
+- Tray size: 2 pieces (reduced from 3 for increased difficulty)
+- Guaranteed floor: no tray can be all compact shapes — always replace one with 1 or 2-cell piece
 - Uses smoothStep interpolation between breakpoints
 
 ## Design Philosophy — Read This

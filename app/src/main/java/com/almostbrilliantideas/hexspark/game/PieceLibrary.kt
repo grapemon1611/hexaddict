@@ -159,12 +159,12 @@ object PieceLibrary {
         compact = 2.5f
     )
 
-    // 5000+: Late game pressure
+    // 5000+: Aggressive late game pressure - compact shapes dominate
     private val lateGameWeights = WeightProfile(
-        single = 1.5f,
-        pair = 1.5f,
-        line = 2.5f,
-        compact = 3.5f
+        single = 1.0f,
+        pair = 1.0f,
+        line = 2.0f,
+        compact = 8.0f
     )
 
     /**
@@ -175,7 +175,7 @@ object PieceLibrary {
      * - 0-999: Heavy small pieces (single 4x, pair 3.5x, line 1.5x, compact 1x)
      * - 1000-2999: Gentle transition (single 3x, pair 3x, line 2x, compact 1.5x)
      * - 3000-4999: Balanced mix (single 2x, pair 2.5x, line 2.5x, compact 2.5x)
-     * - 5000+: Late game pressure (single 1.5x, pair 1.5x, line 2.5x, compact 3.5x)
+     * - 5000+: Aggressive pressure (single 1x, pair 1x, line 2x, compact 8x)
      */
     private fun getWeightsForScore(score: Int): Map<PieceCategory, Float> {
         val profile = when {
@@ -193,13 +193,8 @@ object PieceLibrary {
                 val t = (score - 3000) / 2000f
                 interpolateProfiles(earlyMidWeights, midGameWeights, smoothStep(t))
             }
-            score < 7000 -> {
-                // Interpolate mid -> late (score 5000-7000)
-                val t = (score - 5000) / 2000f
-                interpolateProfiles(midGameWeights, lateGameWeights, smoothStep(t))
-            }
             else -> {
-                // Pure late game
+                // Aggressive late game - compact shapes dominate immediately at 5000+
                 lateGameWeights
             }
         }
@@ -236,7 +231,7 @@ object PieceLibrary {
     /**
      * Generate a tray of pieces with guaranteed floor:
      * No tray should ever be all compact shapes - always ensure at least
-     * one 1-cell or 2-cell piece if all three would be compact.
+     * one 1-cell or 2-cell piece if all would be compact.
      */
     fun generateTray(score: Int, size: Int = 3): List<HexPiece> {
         val pieces = MutableList(size) { weightedRandomPiece(score) }
