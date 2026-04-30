@@ -50,6 +50,7 @@ dependencies {
     implementation(libs.androidx.ui.text.google.fonts)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.fragment)
 
     // Splash Screen API (backwards compatible)
     implementation("androidx.core:core-splashscreen:1.0.1")
