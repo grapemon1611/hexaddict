@@ -143,28 +143,36 @@ object PieceLibrary {
         compact = 1.0f
     )
 
-    // 1000-2999: Gentle transition, small pieces still dominant
+    // 1000-2999: Small pieces still common, compact stays low
     private val earlyMidWeights = WeightProfile(
-        single = 3.0f,
-        pair = 3.0f,
-        line = 2.0f,
+        single = 2.5f,
+        pair = 2.5f,
+        line = 1.5f,
+        compact = 1.0f
+    )
+
+    // 3000-4999: Fully balanced across all categories
+    private val midGameWeights = WeightProfile(
+        single = 1.5f,
+        pair = 1.5f,
+        line = 1.5f,
         compact = 1.5f
     )
 
-    // 3000-4999: Balanced mix
-    private val midGameWeights = WeightProfile(
-        single = 2.0f,
-        pair = 2.5f,
-        line = 2.5f,
-        compact = 2.5f
+    // 5000-9999: Compact shapes start to dominate
+    private val lateGameWeights = WeightProfile(
+        single = 0.5f,
+        pair = 1.0f,
+        line = 1.5f,
+        compact = 3.0f
     )
 
-    // 5000+: Aggressive late game pressure - compact shapes dominate
-    private val lateGameWeights = WeightProfile(
-        single = 1.0f,
-        pair = 1.0f,
-        line = 2.0f,
-        compact = 8.0f
+    // 10000+: Compact shapes heavily dominate, singles nearly absent
+    private val endGameWeights = WeightProfile(
+        single = 0.1f,
+        pair = 0.5f,
+        line = 1.5f,
+        compact = 5.0f
     )
 
     /**
@@ -173,30 +181,27 @@ object PieceLibrary {
      *
      * Progression:
      * - 0-999: Heavy small pieces (single 4x, pair 3.5x, line 1.5x, compact 1x)
-     * - 1000-2999: Gentle transition (single 3x, pair 3x, line 2x, compact 1.5x)
-     * - 3000-4999: Balanced mix (single 2x, pair 2.5x, line 2.5x, compact 2.5x)
-     * - 5000+: Aggressive pressure (single 1x, pair 1x, line 2x, compact 8x)
+     * - 1000-2999: Small still common (single 2.5x, pair 2.5x, line 1.5x, compact 1x)
+     * - 3000-4999: Balanced (single 1.5x, pair 1.5x, line 1.5x, compact 1.5x)
+     * - 5000-9999: Compact pressure (single 0.5x, pair 1x, line 1.5x, compact 3x)
+     * - 10000+: Compact dominates (single 0.1x, pair 0.5x, line 1.5x, compact 5x)
      */
     private fun getWeightsForScore(score: Int): Map<PieceCategory, Float> {
         val profile = when {
-            score < 1000 -> {
-                // Pure early game
-                earlyGameWeights
-            }
+            score < 1000 -> earlyGameWeights
             score < 3000 -> {
-                // Interpolate early -> early-mid (score 1000-3000)
                 val t = (score - 1000) / 2000f
                 interpolateProfiles(earlyGameWeights, earlyMidWeights, smoothStep(t))
             }
             score < 5000 -> {
-                // Interpolate early-mid -> mid (score 3000-5000)
                 val t = (score - 3000) / 2000f
                 interpolateProfiles(earlyMidWeights, midGameWeights, smoothStep(t))
             }
-            else -> {
-                // Aggressive late game - compact shapes dominate immediately at 5000+
-                lateGameWeights
+            score < 10000 -> {
+                val t = (score - 5000) / 5000f
+                interpolateProfiles(midGameWeights, lateGameWeights, smoothStep(t))
             }
+            else -> endGameWeights
         }
 
         return mapOf(
@@ -229,24 +234,22 @@ object PieceLibrary {
     }
 
     /**
-     * Generate a tray of pieces with guaranteed floor:
-     * No tray should ever be all compact shapes - always ensure at least
-     * one 1-cell or 2-cell piece if all would be compact.
+     * Generate a tray of pieces. Below score 10,000: no tray of all compact shapes —
+     * always replace one with a 1- or 2-cell piece. At 10,000+ the floor is removed.
      */
     fun generateTray(score: Int, size: Int = 3): List<HexPiece> {
         val pieces = MutableList(size) { weightedRandomPiece(score) }
 
-        // Check if all pieces are compact shapes
-        val allCompact = pieces.all { piece ->
-            piecesByCategory[PieceCategory.COMPACT]?.contains(piece) == true
-        }
-
-        if (allCompact && size > 0) {
-            // Replace one random piece with a single or pair
-            val smallPieces = (piecesByCategory[PieceCategory.SINGLE] ?: emptyList()) +
-                    (piecesByCategory[PieceCategory.PAIR] ?: emptyList())
-            val replaceIndex = Random.nextInt(size)
-            pieces[replaceIndex] = smallPieces.random()
+        if (score < 10000) {
+            val allCompact = pieces.all { piece ->
+                piecesByCategory[PieceCategory.COMPACT]?.contains(piece) == true
+            }
+            if (allCompact && size > 0) {
+                val smallPieces = (piecesByCategory[PieceCategory.SINGLE] ?: emptyList()) +
+                        (piecesByCategory[PieceCategory.PAIR] ?: emptyList())
+                val replaceIndex = Random.nextInt(size)
+                pieces[replaceIndex] = smallPieces.random()
+            }
         }
 
         return pieces

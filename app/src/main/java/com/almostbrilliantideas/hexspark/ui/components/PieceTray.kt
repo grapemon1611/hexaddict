@@ -31,7 +31,7 @@ import com.almostbrilliantideas.hexspark.model.HexPiece
 import com.almostbrilliantideas.hexspark.ui.GameDimensions
 
 /**
- * Tray displaying 2 available pieces for placement.
+ * Tray displaying 3 available pieces for placement.
  *
  * @param onPieceDragStart Called with (index, piece, absolutePosition) when drag starts
  * @param onPieceDrag Called with absolute screen position during drag

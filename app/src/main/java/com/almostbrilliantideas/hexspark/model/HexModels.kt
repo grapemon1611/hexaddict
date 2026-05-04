@@ -67,7 +67,7 @@ data class HexPiece(
  */
 data class GameState(
     val board: Map<AxialCoord, HexCell>,
-    val piecesTray: List<HexPiece?>,  // 2 slots, null = used
+    val piecesTray: List<HexPiece?>,  // 3 slots, null = used
     val score: Int = 0,
     val bestScore: Int = 0,
     val isGameOver: Boolean = false,
@@ -75,7 +75,7 @@ data class GameState(
     val lastClearInfo: ClearInfo? = null  // Info about the last clear for display
 ) {
     companion object {
-        const val TRAY_SIZE = 2
+        const val TRAY_SIZE = 3
     }
 }
 

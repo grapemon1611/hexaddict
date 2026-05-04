@@ -1,14 +1,15 @@
-# Hex Addict — Claude Code Project Instructions
+# HexSpark — Claude Code Project Instructions
 
 ## Project Identity
-- **App name:** Hex Addict
-- **Package:** `com.almostbrilliantideas.hexaddict`
-- **Platform:** Android (Kotlin)
+- **App name:** HexSpark
+- **Package:** `com.almostbrilliantideas.hexspark`
+- **Platform:** Android (Kotlin, Jetpack Compose)
 - **Min SDK:** API 24
 - **Developer:** Almost Brilliant Ideas
+- **Store title:** HexSpark — Hex Block Puzzle
 
 ## What This Game Is
-A hex block puzzle game where the player drags pieces onto a hexagonal grid and clears lines on three axes simultaneously. Think Bejeweled and Tetris had a baby. The hex grid is the visual differentiator — this is an endless score-attack game with no levels, no rounds, no timers.
+A hex block puzzle game where the player drags pieces onto a hexagonal grid and clears lines on three axes simultaneously. Endless score-attack, no levels, no timers, no rounds. The hex grid is the visual differentiator. Think Bejeweled and Tetris had a baby on a hex grid.
 
 ## Current Build Status
 
@@ -21,21 +22,31 @@ A hex block puzzle game where the player drags pieces onto a hexagonal grid and 
 - **Three-axis line clearing** — horizontal, diagonal-R (q fixed), diagonal-L (q+r fixed)
 - **Color palette progression** — 4 colors at 0-999, 5 at 1000-2999, 6 at 3000+
 - **Color bonus scoring** — 2x single same-color line, 3x PAYDAY, JACKPOT board clear x5
-- **Visual feedback** — 2x indicator implemented, PAYDAY and JACKPOT text overlays
-- **Game over screen** — shows final score, best score, Play Again button
+- **Spark particle effect** — lines clear with spark bursts, colored sparks for same-color lines, sequential ignition along line direction, intersection cells get larger burst
+- **Slow motion multi-line clears** — 2 lines=50% speed, 3 lines=33% speed, PAYDAY=33%, JACKPOT=25%
+- **Ambient line highlighting** — lines with 2+ same-color cells glow subtly
+- **Score preview on drag** — shows points a placement would score including bonus multiplier
+- **Visual feedback** — 2x indicator, PAYDAY and JACKPOT text overlays
+- **Game over screen** — shows final score, best score, Play Again button, session stats
 - **Best score persistence** — stored in SharedPreferences, survives app restarts
+- **Settings screen** — sound toggle, haptics toggle, show tutorial on startup toggle
+- **First launch tutorial** — explains color bonus, PAYDAY, JACKPOT mechanics
+- **Sound effects** — spark/sizzle sounds scaling across 6 clear tiers, placement sound, game over sound
+- **Haptic feedback** — scales with clear tier, JACKPOT has dramatic rumble
+- **AdMob interstitial** — preloads during play, shows at game over, fails gracefully offline
+- **Responsive layout** — board scales to screen size, tested on 7" and 10" tablets and phones
+- **Time-of-day and seasonal backgrounds** — 16 combinations, device clock + hemisphere inference
+- **Splash screen** — HexSpark logo with spark dissolve transition into game
+- **Immersive mode** — navigation bar hidden during gameplay
+- **Oxanium SemiBold 600** — used for HexSpark logo only, system fonts everywhere else
 
-### IN PROGRESS (current session)
-- Ambient line highlighting — lines with 2+ same-color cells glow subtly, intensity increases as line fills
-- Score preview on drag — shows points a placement would score including color bonus multiplier
+### IN PROGRESS / JUST CHANGED
+- **Piece tray reduced from 3 to 2 pieces** — increases difficulty, reduces session length
+- **Late game piece weighting** — new 5000+ threshold with 8x compact shape weighting
 
 ### NOT YET STARTED
-- Time-of-day and seasonal backgrounds (16 combinations)
-- Sound effects (6 distinct clear tiers plus placement and game over)
-- Haptic feedback
-- Settings screen (sound toggle, haptics toggle)
-- AdMob integration (game over screen only)
 - One-time ad removal purchase (Google Play Billing)
+- Production icon (current icon is beta placeholder)
 
 ## Critical Coordinate System
 Do not modify these — they are mathematically verified:
@@ -59,8 +70,8 @@ Six neighbor directions:
 - 73 of 77 cells sit on all three axes — triple-axis clears are achievable
 - Shortest diagonal lines are 3 cells (board corners)
 - Horizontal lines: 9 lines (five 9-cell, four 8-cell)
-- Diagonal-R lines: 11 lines (five 9-cell, two 7-cell, two 5-cell, two 3-cell)
-- Diagonal-L lines: 11 lines (five 9-cell, two 7-cell, two 5-cell, two 3-cell)
+- Diagonal-R lines: 11 lines
+- Diagonal-L lines: 11 lines
 
 ## Piece Library (15 total, axial coordinates, no rotation)
 **1-cell:** single [(0,0)]
@@ -96,20 +107,31 @@ Six neighbor directions:
 ## Scoring Rules
 - 1 point per cell placed
 - 10 points per cell cleared in a line
-- Same-color line bonus: 2x multiplier on entire move
+- Single same-color line: 2x multiplier on entire move
 - Two or more same-color lines (PAYDAY): 3x multiplier on entire move
 - JACKPOT (all three axes + at least one same-color line): entire board clears, all remaining cells score x5
 - Multiplier applies to clear points only, not placement points
-- Mixed clears still trigger highest applicable tier
 
 ## Weighted Piece Generation
 - Score 0–999: heavy small pieces (single 4.0x, pair 3.5x, line 1.5x, compact 1.0x)
 - Score 1000–2999: gentle transition, small pieces still dominant
 - Score 3000–4999: balanced mix
-- Score 5000+: aggressive pressure (single 1.0x, pair 1.0x, line 2.0x, compact 8.0x)
-- Tray size: 2 pieces (reduced from 3 for increased difficulty)
-- Guaranteed floor: no tray can be all compact shapes — always replace one with 1 or 2-cell piece
+- Score 5000+: late game pressure — compact 8.0x, small pieces at 1.0x floor
+- Guaranteed floor: no tray of two can be all compact shapes
 - Uses smoothStep interpolation between breakpoints
+
+## Piece Tray
+- **2 pieces visible at a time** (reduced from 3 for difficulty)
+- Player may place them in any order
+- New set generated when both are placed
+
+## AdMob
+- Test App ID: `ca-app-pub-3940256099942544~3347511713`
+- Test Ad Unit ID: `ca-app-pub-3940256099942544/1033173712`
+- Swap for real IDs before production release
+- Interstitial only, at game over screen only
+- Preload during gameplay, never block game over screen
+- Fail gracefully offline — no error, no delay, no message to user
 
 ## Design Philosophy — Read This
 - **Ship once, ship complete.** No planned updates or iterations.
@@ -119,15 +141,11 @@ Six neighbor directions:
 - **Silent progression.** Palette expansion and difficulty increase happen without announcements.
 - **Restrained aesthetic.** Muted gradient blocks, frosted board surface, atmospheric backgrounds. No wood texture, no neon, no casino glow — except JACKPOT which intentionally breaks this rule.
 
-## Monetization (not yet implemented)
-- Free with ads at game over screen only
-- One-time purchase removes ads forever
-- If offline and ads cannot load: game continues normally, no penalty, no nagging
-- No account required
-
-## Typography
-- **Logo/game title only:** Google Font — Oxanium
-- **All other UI elements:** system default font
+## Monetization (partially implemented)
+- Free with ads at game over screen only ✓
+- One-time purchase removes ads forever — NOT YET IMPLEMENTED
+- If offline and ads cannot load: game continues normally, no penalty ✓
+- No account required ✓
 
 ## What NOT to Build
 - Piece rotation
@@ -139,3 +157,4 @@ Six neighbor directions:
 - Energy systems, currencies, battle pass, loot boxes
 - Forced online play
 - Story mode
+- Banner ads during gameplay
