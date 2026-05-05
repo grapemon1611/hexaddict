@@ -141,13 +141,13 @@ private fun calculateGameDimensions(
     val spacerAfterScoreBar = (3f * baseScale).coerceAtLeast(2f)
     val spacerAfterBoard = 8f  // Minimum 8dp between board and tray
 
-    // Board padding
-    val boardPadding = (6f * baseScale).coerceAtLeast(6f)
+    // Board padding — minimal, board fills edge-to-edge within the screen
+    val boardPadding = (4f * baseScale).coerceAtLeast(4f)
 
     // ========== STEP 3: Calculate available space for board ==========
 
-    // Available width for board content (inside padding)
-    val availableWidthForBoard = screenWidthDp - (screenPaddingHorizontal * 2) - (boardPadding * 2)
+    // Board spans the full screen width; only its own padding eats into hex space
+    val availableWidthForBoard = screenWidthDp - (boardPadding * 2)
 
     // Estimate piece tray height (will be refined after hex size is known)
     // For now, use a reasonable estimate based on screen size

@@ -181,18 +181,21 @@ fun GameScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = dimensions.screenPaddingHorizontal)
                 .padding(top = dimensions.screenPaddingTop, bottom = dimensions.screenPaddingBottom),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Logo above score bar
-            GameLogo(dimensions = dimensions)
+            // Logo above score bar — inset from screen edges
+            GameLogo(
+                dimensions = dimensions,
+                modifier = Modifier.padding(horizontal = dimensions.screenPaddingHorizontal)
+            )
 
-            // Score display
+            // Score display — inset from screen edges
             ScoreDisplay(
                 score = gameState.score,
                 bestScore = gameState.bestScore,
-                dimensions = dimensions
+                dimensions = dimensions,
+                modifier = Modifier.padding(horizontal = dimensions.screenPaddingHorizontal)
             )
 
             Spacer(modifier = Modifier.height(dimensions.spacerAfterScoreBar))
@@ -387,10 +390,11 @@ private fun screenPositionToAxial(
 private fun ScoreDisplay(
     score: Int,
     bestScore: Int,
-    dimensions: GameDimensions
+    dimensions: GameDimensions,
+    modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .background(
                 color = Color(0xFF252540).copy(alpha = 0.85f),
