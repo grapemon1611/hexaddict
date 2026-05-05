@@ -173,9 +173,9 @@ fun GameScreen(
         // Ground zone: ~78-90% (between board and piece tray)
         BackgroundScene(
             modifier = Modifier.fillMaxSize(),
-            skyZoneEndFraction = 0.10f,
-            groundZoneStartFraction = 0.78f,
-            groundZoneEndFraction = 0.90f
+            skyZoneEndFraction = 0.14f,
+            groundZoneStartFraction = 0.86f,
+            groundZoneEndFraction = 0.98f
         )
 
         Column(

@@ -42,10 +42,10 @@ data class GameDimensions(
 
     // Spacers
     val spacerAfterScoreBar: Dp,
-    val spacerAfterBoard: Dp,  // Minimum 16dp for comfortable spacing
+    val spacerAfterBoard: Dp,
 
     // Board
-    val boardPadding: Dp,  // Minimum 8dp
+    val boardPadding: Dp,
     val boardCornerRadius: Dp,
     val boardWidth: Dp,   // Calculated from hex size
     val boardHeight: Dp,  // Calculated from hex size
@@ -121,28 +121,28 @@ private fun calculateGameDimensions(
 
     // ========== STEP 2: Calculate fixed UI element dimensions ==========
 
-    // Screen padding (minimum 12dp, scales moderately)
+    // Screen padding — kept slim to maximise board area
     val screenPaddingHorizontal = (16f * baseScale).coerceIn(12f, 24f)
-    val screenPaddingTop = (16f * baseScale).coerceIn(12f, 20f)
-    val screenPaddingBottom = (16f * baseScale).coerceIn(12f, 20f)
+    val screenPaddingTop = (8f * baseScale).coerceIn(6f, 12f)
+    val screenPaddingBottom = (8f * baseScale).coerceIn(6f, 12f)
 
-    // Logo dimensions
-    val logoFontSize = (28f * baseScale).coerceIn(22f, 38f)
-    val logoPaddingVertical = (8f * baseScale).coerceIn(6f, 12f)
+    // Logo dimensions — compact header treatment
+    val logoFontSize = (20f * baseScale).coerceIn(16f, 26f)
+    val logoPaddingVertical = (3f * baseScale).coerceIn(2f, 5f)
     val logoHeight = logoFontSize * 1.3f + logoPaddingVertical * 2  // Approximate
 
-    // Score bar dimensions
-    val scoreBarPaddingVertical = (8f * baseScale).coerceIn(6f, 14f)
-    val scoreValueFontSize = (28f * baseScale).coerceIn(22f, 36f)
-    val scoreLabelFontSize = (12f * baseScale).coerceIn(10f, 15f)
+    // Score bar dimensions — slim, readable
+    val scoreBarPaddingVertical = (3f * baseScale).coerceIn(2f, 6f)
+    val scoreValueFontSize = (22f * baseScale).coerceIn(18f, 30f)
+    val scoreLabelFontSize = (11f * baseScale).coerceIn(9f, 14f)
     val scoreBarHeight = scoreValueFontSize * 1.3f + scoreLabelFontSize * 1.2f + scoreBarPaddingVertical * 2
 
-    // Spacers - minimum comfortable spacing
-    val spacerAfterScoreBar = (8f * baseScale).coerceAtLeast(6f)
-    val spacerAfterBoard = 16f.coerceAtLeast(16f)  // Minimum 16dp between board and tray
+    // Spacers — tight to push more space to the board
+    val spacerAfterScoreBar = (3f * baseScale).coerceAtLeast(2f)
+    val spacerAfterBoard = 8f  // Minimum 8dp between board and tray
 
-    // Board padding - minimum 8dp
-    val boardPadding = (8f * baseScale).coerceAtLeast(8f)
+    // Board padding
+    val boardPadding = (6f * baseScale).coerceAtLeast(6f)
 
     // ========== STEP 3: Calculate available space for board ==========
 
@@ -151,7 +151,7 @@ private fun calculateGameDimensions(
 
     // Estimate piece tray height (will be refined after hex size is known)
     // For now, use a reasonable estimate based on screen size
-    val estimatedTrayHeight = (screenHeightDp * 0.12f).coerceIn(80f, 160f)
+    val estimatedTrayHeight = (screenHeightDp * 0.10f).coerceIn(55f, 130f)
 
     // Available height for board content (inside padding)
     val availableHeightForBoard = screenHeightDp -

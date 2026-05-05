@@ -5,10 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -159,21 +156,12 @@ fun HexBoard(
     // Use dimensions if provided, otherwise use defaults
     val boardPadding = dimensions?.boardPadding ?: 8.dp
     val boardCornerRadius = dimensions?.boardCornerRadius ?: 16.dp
-    val boardWidth = dimensions?.boardWidth
-    val boardHeight = dimensions?.boardHeight
 
-    // If dimensions are provided, use explicit sizing; otherwise fall back to fillMaxSize
-    val sizeModifier = if (boardWidth != null && boardHeight != null) {
-        Modifier
-            .width(boardWidth)
-            .height(boardHeight)
-    } else {
-        Modifier.fillMaxSize()
-    }
-
+    // Always fill the container — the hex grid centres itself within the canvas,
+    // and the frosted-glass surface should cover the full playing area.
     Box(
         modifier = modifier
-            .then(sizeModifier)
+            .fillMaxSize()
             .background(
                 color = Color(0xFF252540).copy(alpha = 0.85f),  // Frosted effect
                 shape = RoundedCornerShape(boardCornerRadius)
