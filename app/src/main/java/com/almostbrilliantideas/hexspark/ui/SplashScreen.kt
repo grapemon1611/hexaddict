@@ -161,7 +161,7 @@ fun SplashScreen(
                 // App icon
                 Image(
                     painter = painterResource(id = R.drawable.hexspark_icon),
-                    contentDescription = "HexSpark",
+                    contentDescription = "SparkHex™",
                     modifier = Modifier
                         .size(180.dp)
                         .onGloballyPositioned { coordinates ->
@@ -174,7 +174,7 @@ fun SplashScreen(
 
                 // App name
                 Text(
-                    text = "HexSpark",
+                    text = "SparkHex™",
                     fontFamily = OxaniumSemiBold,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 42.sp,

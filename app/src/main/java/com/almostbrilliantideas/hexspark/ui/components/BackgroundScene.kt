@@ -241,7 +241,7 @@ fun GameLogo(
     val paddingVertical = dimensions?.logoPaddingVertical ?: 8.dp
 
     Text(
-        text = "HexSpark",
+        text = "SparkHex™",
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = paddingVertical),

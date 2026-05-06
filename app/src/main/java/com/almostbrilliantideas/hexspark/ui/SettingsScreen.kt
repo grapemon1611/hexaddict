@@ -1,5 +1,7 @@
 package com.almostbrilliantideas.hexspark.ui
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,7 +30,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.almostbrilliantideas.hexspark.audio.SettingsManager
@@ -38,6 +42,7 @@ fun SettingsScreen(
     settingsManager: SettingsManager,
     onClose: () -> Unit
 ) {
+    val context = LocalContext.current
     var soundEnabled by remember { mutableStateOf(settingsManager.soundEnabled) }
     var hapticsEnabled by remember { mutableStateOf(settingsManager.hapticsEnabled) }
     var showTutorialOnStartup by remember { mutableStateOf(settingsManager.showTutorialOnStartup) }
@@ -103,7 +108,22 @@ fun SettingsScreen(
                     }
                 )
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Privacy policy link
+                Text(
+                    text = "Privacy Policy",
+                    fontSize = 13.sp,
+                    color = Color(0xFF8B84D4),
+                    textDecoration = TextDecoration.Underline,
+                    modifier = Modifier.clickable {
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Uri.parse("https://almostbrilliantideas.com/privacy_policies/hexspark-privacy-policy.html"))
+                        )
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
 
                 // Close button
                 Box(
