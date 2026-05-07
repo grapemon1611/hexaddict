@@ -182,7 +182,8 @@ fun GameScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = dimensions.screenPaddingTop, bottom = dimensions.screenPaddingBottom),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             // Logo above score bar — inset from screen edges
             GameLogo(
@@ -200,10 +201,10 @@ fun GameScreen(
 
             Spacer(modifier = Modifier.height(dimensions.spacerAfterScoreBar))
 
-            // Hex board - centered in available space
+            // Hex board - fixed height so the group can be centered as a whole
             Box(
                 modifier = Modifier
-                    .weight(1f)
+                    .height(dimensions.boardHeight)
                     .fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {

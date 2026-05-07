@@ -126,9 +126,9 @@ private fun calculateGameDimensions(
     val screenPaddingTop = (8f * baseScale).coerceIn(6f, 12f)
     val screenPaddingBottom = (8f * baseScale).coerceIn(6f, 12f)
 
-    // Logo dimensions — compact header treatment
-    val logoFontSize = (20f * baseScale).coerceIn(16f, 26f)
-    val logoPaddingVertical = (3f * baseScale).coerceIn(2f, 5f)
+    // Logo dimensions — prominent title
+    val logoFontSize = (30f * baseScale).coerceIn(24f, 39f)
+    val logoPaddingVertical = (2f * baseScale).coerceIn(1f, 3f)
     val logoHeight = logoFontSize * 1.3f + logoPaddingVertical * 2  // Approximate
 
     // Score bar dimensions — slim, readable
