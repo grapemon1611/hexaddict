@@ -24,7 +24,7 @@ class AdManager(private val context: Context) {
 
     companion object {
         private const val TAG = "AdManager"
-        private const val AD_UNIT_ID = "ca-app-pub-3940256099942544/1033173712"
+        private const val AD_UNIT_ID = "ca-app-pub-8853683185264753/5986873780"
     }
 
     private var interstitialAd: InterstitialAd? = null

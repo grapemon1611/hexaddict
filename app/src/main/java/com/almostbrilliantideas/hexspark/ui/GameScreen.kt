@@ -54,6 +54,7 @@ import com.almostbrilliantideas.hexspark.audio.GameAudioController
 import com.almostbrilliantideas.hexspark.game.HexUtils
 import com.almostbrilliantideas.hexspark.model.HexPiece
 import com.almostbrilliantideas.hexspark.ui.components.BackgroundScene
+import com.almostbrilliantideas.hexspark.ui.components.BannerAdView
 import com.almostbrilliantideas.hexspark.ui.components.DraggedPiece
 import com.almostbrilliantideas.hexspark.ui.components.GameLogo
 import com.almostbrilliantideas.hexspark.ui.components.HexBoard
@@ -68,7 +69,8 @@ fun GameScreen(
 ) {
     val context = LocalContext.current
     val gameState by viewModel.gameState.collectAsState()
-    val dimensions = rememberGameDimensions()
+    val isAdFree = remember { adManager?.let { !it.shouldShowAds } ?: false }
+    val dimensions = rememberGameDimensions(isAdFree = isAdFree)
     val previewCells by viewModel.previewCells.collectAsState()
     val isValidPlacement by viewModel.isValidPlacement.collectAsState()
     val lineHighlights by viewModel.lineHighlights.collectAsState()
@@ -181,7 +183,10 @@ fun GameScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = dimensions.screenPaddingTop, bottom = dimensions.screenPaddingBottom),
+                .padding(
+                    top = dimensions.screenPaddingTop,
+                    bottom = if (!isAdFree) (dimensions.screenPaddingBottom + 50.dp) else dimensions.screenPaddingBottom
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -354,6 +359,16 @@ fun GameScreen(
                     // Mark tutorial as seen so it won't show again unless enabled in settings
                     audioController?.settingsManager?.tutorialSeen = true
                 }
+            )
+        }
+
+        // Banner ad at the very bottom — 50dp reserved space, collapses when ad-free
+        if (!isAdFree) {
+            BannerAdView(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+                    .align(Alignment.BottomCenter)
             )
         }
     }

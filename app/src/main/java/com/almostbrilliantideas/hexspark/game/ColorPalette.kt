@@ -58,15 +58,17 @@ object ColorPalette {
     val allColors = listOf(Purple, Teal, Coral, Blue, Mauve, Amber)
 
     /**
-     * Get active colors based on score.
-     * - Score 0-999: 4 colors
-     * - Score 1,000-2,999: 5 colors
-     * - Score 3,000+: 6 colors
+     * Get active colors based on score — aligned with piece weight thresholds.
+     * - Score 0–999: 3 colors (Purple, Teal, Coral)
+     * - Score 1,000–2,999: 4 colors (add Blue)
+     * - Score 3,000–4,999: 5 colors (add Mauve)
+     * - Score 5,000+: 6 colors (add Amber)
      */
     fun getActiveColors(score: Int): List<PieceColor> {
         val count = when {
-            score < 1000 -> 4
-            score < 3000 -> 5
+            score < 1000 -> 3
+            score < 3000 -> 4
+            score < 5000 -> 5
             else -> 6
         }
         return allColors.take(count)

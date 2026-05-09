@@ -86,14 +86,15 @@ data class GameDimensions(
  * Calculate game dimensions based on current screen configuration.
  */
 @Composable
-fun rememberGameDimensions(): GameDimensions {
+fun rememberGameDimensions(isAdFree: Boolean = false): GameDimensions {
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
 
-    return remember(configuration.screenWidthDp, configuration.screenHeightDp) {
+    return remember(configuration.screenWidthDp, configuration.screenHeightDp, isAdFree) {
+        val bannerHeightDp = if (!isAdFree) 50f else 0f
         calculateGameDimensions(
             screenWidthDp = configuration.screenWidthDp.toFloat(),
-            screenHeightDp = configuration.screenHeightDp.toFloat()
+            screenHeightDp = configuration.screenHeightDp.toFloat() - bannerHeightDp
         )
     }
 }

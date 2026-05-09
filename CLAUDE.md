@@ -20,7 +20,7 @@ A hex block puzzle game where the player drags pieces onto a hexagonal grid and 
 - **15-piece library** — all pieces defined in axial coordinates, no rotation
 - **Weighted piece generation** — shifts from small pieces early to compact shapes late game
 - **Three-axis line clearing** — horizontal, diagonal-R (q fixed), diagonal-L (q+r fixed)
-- **Color palette progression** — 4 colors at 0-999, 5 at 1000-2999, 6 at 3000+
+- **Color palette progression** — 3 colors at 0-999, 4 at 1000-2999, 5 at 3000-4999, 6 at 5000+
 - **Color bonus scoring** — 2x single same-color line, 3x PAYDAY, JACKPOT board clear x5
 - **Spark particle effect** — lines clear with spark bursts, colored sparks for same-color lines, sequential ignition along line direction, intersection cells get larger burst
 - **Slow motion multi-line clears** — 2 lines=50% speed, 3 lines=33% speed, PAYDAY=33%, JACKPOT=25%
@@ -126,9 +126,9 @@ Six neighbor directions:
 - New set generated when both are placed
 
 ## AdMob
-- Test App ID: `ca-app-pub-3940256099942544~3347511713`
-- Test Ad Unit ID: `ca-app-pub-3940256099942544/1033173712`
-- Swap for real IDs before production release
+- App ID: `ca-app-pub-8853683185264753~7584085973`
+- Interstitial Ad Unit ID: `ca-app-pub-8853683185264753/5986873780`
+- Banner Ad Unit ID: `ca-app-pub-8853683185264753/5485580796`
 - Interstitial only, at game over screen only
 - Preload during gameplay, never block game over screen
 - Fail gracefully offline — no error, no delay, no message to user
